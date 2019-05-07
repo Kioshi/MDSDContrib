@@ -1,0 +1,45 @@
+grammar dk.sdu.martinek.MyDSL with org.eclipse.xtext.common.Terminals
+
+generate myDSL "http://www.sdu.dk/martinek/MyDSL"
+
+Model:
+	widgets+=Widget*
+	entities+=Entity*
+;
+
+Entity:
+	WidgetIdentifier name=ID
+	OPEN
+		(properties+=Property)*
+	CLOSE
+;
+
+fragment WidgetIdentifier*:
+	type=[Widget]
+;
+	
+Widget:
+	'Widget' name=ID
+	OPEN
+		template=Template
+		(properties+=Property)*	
+	CLOSE
+;
+
+Template:
+	'template' value=STRING
+;	
+
+Property:
+	'property' name=ID
+;
+	
+	
+	
+terminal OPEN:
+	'{'
+;
+
+terminal CLOSE:
+	'}'
+;

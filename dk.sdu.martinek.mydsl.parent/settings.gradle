@@ -1,0 +1,3 @@
+include 'dk.sdu.martinek.mydsl'
+include 'dk.sdu.martinek.mydsl.ide'
+include 'dk.sdu.martinek.mydsl.web'

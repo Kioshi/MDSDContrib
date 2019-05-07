@@ -1,0 +1,18 @@
+Widget testButt
+{
+	template '%x% test %y% %z%'
+	property x
+	property y
+	property z
+}
+
+Widget testButt2
+{
+	template 'hahahah'
+}
+
+testButt teticek
+{
+	
+}
+
