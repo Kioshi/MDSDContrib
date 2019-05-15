@@ -36,3 +36,6 @@ hs_err_pid*
 /dk\.sdu\.martinek\.mydsl/model/generated/
 TestProject/src-gen/
 **/*-gen/**
+*.xtendbin
+*.xtendbin
+**/generated/*

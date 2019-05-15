@@ -3,6 +3,20 @@
  */
 package dk.sdu.martinek.scoping
 
+import dk.sdu.martinek.myDSL.EntityIdentifier
+import dk.sdu.martinek.myDSL.impl.AttributeImpl
+import dk.sdu.martinek.myDSL.impl.ChildfullEntityImpl
+import dk.sdu.martinek.myDSL.impl.ChildlessEntityImpl
+import dk.sdu.martinek.myDSL.impl.SpecificationImpl
+import dk.sdu.martinek.myDSL.impl.WidgetImpl
+import java.util.ArrayList
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EReference
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.scoping.IScope
+import org.eclipse.xtext.scoping.Scopes
+import dk.sdu.martinek.myDSL.MyDSLPackage
+import dk.sdu.martinek.myDSL.Entity
 
 /**
  * This class contains custom scoping description.
@@ -12,4 +26,102 @@ package dk.sdu.martinek.scoping
  */
 class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
 
+	//@Inject extension MyDSLModelUtils
+	
+	override IScope getScope(EObject context, EReference reference) {
+		if(context instanceof AttributeImpl){
+			//if (reference == MyDSLPackage.Literals.ATTRIBUTE__RIGHT)
+			if (reference.EReferenceType.instanceClass == Entity)
+			{				
+		        val rootElement = EcoreUtil2.getRootContainer(context)
+		        val candidates = EcoreUtil2.getAllContentsOfType(rootElement, Entity)
+		        val container = context.eContainer
+		        if (container instanceof SpecificationImpl)
+		        {
+		        	candidates.remove(container.type)
+		        }
+
+		        return Scopes.scopeFor(candidates)
+			}
+			else
+			{				
+				val container = context.eContainer;
+				if (container instanceof SpecificationImpl)
+				{
+			        val rootElement = EcoreUtil2.getRootContainer(context)
+			        val candidates = new ArrayList<EObject>()
+			        candidates.addAll(EcoreUtil2.getAllContentsOfType(rootElement, EntityIdentifier))
+					val entity = container.type
+					if (entity instanceof ChildlessEntityImpl)
+					{
+						val widget = entity.type
+						if (widget instanceof WidgetImpl)
+						{
+			        		candidates.addAll(widget.properties)
+							return Scopes.scopeFor(candidates)
+						}					
+					}
+					if (entity instanceof ChildfullEntityImpl)
+					{
+						val widget = entity.type
+						if (widget instanceof WidgetImpl)
+						{
+							return Scopes.scopeFor(widget.properties)
+						}
+					}
+				}
+			}
+		}
+		super.getScope(context, reference)
+	}
+	
+	/*
+	 
+		if (context instanceof SpecificationImpl)
+		{
+			container = context
+		}
+		else if (context instanceof AttributeImpl)
+		{
+			container = context.eContainer;
+			if (reference.EReferenceType.instanceClass == Entity)
+			{				
+		        val rootElement = EcoreUtil2.getRootContainer(context)
+		        val candidates = EcoreUtil2.getAllContentsOfType(rootElement, Entity)
+		        if (container instanceof SpecificationImpl)
+		        {
+		        	candidates.remove(container.type)
+		        }
+
+		        return Scopes.scopeFor(candidates)
+			}
+		}
+		
+		if (container instanceof SpecificationImpl)
+		{
+	        val rootElement = EcoreUtil2.getRootContainer(context)
+	        val candidates = new ArrayList<EObject>()
+	        candidates.addAll(EcoreUtil2.getAllContentsOfType(rootElement, EntityIdentifier))
+			val entity = container.type
+			if (entity instanceof ChildlessEntityImpl)
+			{
+				val widget = entity.type
+				if (widget instanceof WidgetImpl)
+				{
+	        		candidates.addAll(widget.properties)
+					return Scopes.scopeFor(candidates)
+				}					
+			}
+			if (entity instanceof ChildfullEntityImpl)
+			{
+				val widget = entity.type
+				if (widget instanceof WidgetImpl)
+				{
+					return Scopes.scopeFor(widget.properties)
+				}
+			}
+		}
+		
+	 */
+	
 }

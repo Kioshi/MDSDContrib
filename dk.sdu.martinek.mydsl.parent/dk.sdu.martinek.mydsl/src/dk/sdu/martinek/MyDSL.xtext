@@ -3,18 +3,30 @@ grammar dk.sdu.martinek.MyDSL with org.eclipse.xtext.common.Terminals
 generate myDSL "http://www.sdu.dk/martinek/MyDSL"
 
 Model:
+	('package' name=QualifiedName ';')?
+	imports+=MyImport*
+	
 	widgets+=Widget*
 	entities+=Entity*
+	specifications+=Specification*
 ;
 
 Entity:
+	ChildlessEntity|ChildfullEntity
+;
+
+ChildlessEntity:
+	WidgetIdentifier name=ID	
+;
+
+ChildfullEntity:	
 	WidgetIdentifier name=ID
 	OPEN
-		(properties+=Property)*
+		(childs+=Entity)*
 	CLOSE
 ;
 
-fragment WidgetIdentifier*:
+fragment WidgetIdentifier:
 	type=[Widget]
 ;
 	
@@ -33,9 +45,67 @@ Template:
 Property:
 	'property' name=ID
 ;
+
+
+fragment EntityIdentifier:
+	type=[Entity]
+;
+
+Specification:
+	EntityIdentifier
+	OPEN
+		attributes+=Attribute*
+	CLOSE
+;
+
+fragment PropertyIdentifier:
+	type=[Property]
+;
+
+Attribute:
+	PropertyIdentifier '=' right=AttributeValue
+;
+
+AttributeValue:
+	{AttributeValue} STRING 
+	| {MyIntConstant} INT
+	| {MyDoubleConstant} DOUBLE
+	| {MyBoolConstant} ('true' | 'false')
+    | {MyEntityIdentifier} EntityIdentifier
+;
 	
+MyExpression:
+	MyAssignment;
+
+MyAssignment returns MyExpression:
+	MySelectionExpression
+	({MyAssignment.left=current} '=' right=MyExpression)?; // Right associativity
+
+MySelectionExpression returns MyExpression:
+	MyTerminalExpression;
+
+MyTerminalExpression:
+	{MyStringConstant} STRING |
+	{MyIntConstant} INT |
+	{MyDoubleConstant} DOUBLE |
+	{MyBoolConstant} ('true' | 'false')
+	//{MtPropertyRef} property=[PropertyIdentifier] 
+	//|{MySymbolRef} symbol=[EntityIdentifier]
+	;	
 	
+MyImport:
+	'import' importedNamespace=QualifiedNameWithWildcard ';';
 	
+QualifiedName: ID ('.' ID)* ;
+QualifiedNameWithWildcard: QualifiedName '.*'? ;
+
+fragment MyTypedDeclaration *:
+	type=[Widget|QualifiedName] name=ID
+;
+	
+terminal DOUBLE:
+    INT '.' INT;
+    
 terminal OPEN:
 	'{'
 ;
