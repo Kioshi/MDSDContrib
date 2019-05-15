@@ -3,13 +3,8 @@
  */
 package dk.sdu.martinek.scoping
 
-import dk.sdu.martinek.myDSL.EntityIdentifier
-import dk.sdu.martinek.myDSL.impl.AttributeImpl
-import dk.sdu.martinek.myDSL.impl.ChildfullEntityImpl
-import dk.sdu.martinek.myDSL.impl.ChildlessEntityImpl
 import dk.sdu.martinek.myDSL.impl.SpecificationImpl
 import dk.sdu.martinek.myDSL.impl.WidgetImpl
-import java.util.ArrayList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.xtext.EcoreUtil2
@@ -17,6 +12,18 @@ import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
 import dk.sdu.martinek.myDSL.MyDSLPackage
 import dk.sdu.martinek.myDSL.Entity
+import dk.sdu.martinek.myDSL.impl.ModelImpl
+import dk.sdu.martinek.myDSL.impl.EntityImpl
+import java.util.ArrayList
+import dk.sdu.martinek.myDSL.Specification
+import dk.sdu.martinek.myDSL.impl.AttributeImpl
+import java.util.List
+import dk.sdu.martinek.myDSL.Property
+import dk.sdu.martinek.myDSL.impl.PropertyImpl
+import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.emf.ecore.InternalEObject
+import dk.sdu.martinek.myDSL.Widget
+import dk.sdu.martinek.myDSL.Attribute
 
 /**
  * This class contains custom scoping description.
@@ -29,6 +36,58 @@ class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
 	//@Inject extension MyDSLModelUtils
 	
 	override IScope getScope(EObject context, EReference reference) {
+		// Only suggest entities that are not defined yet
+		if (context instanceof ModelImpl && reference == MyDSLPackage.Literals.SPECIFICATION__REF)
+		{		
+	        val rootElement = EcoreUtil2.getRootContainer(context)
+	        val elements = EcoreUtil2.getAllContentsOfType(rootElement, Entity)
+			val alreadyDefined = new ArrayList<Entity>()
+			val entities = new ArrayList<Entity>()
+			for(Specification specification : (context as ModelImpl).specifications)
+			{
+				val type = specification.ref
+				alreadyDefined.add(type)
+				
+			}
+			elements.forEach[itr| 				
+				if(!alreadyDefined.contains(itr))
+					entities.add(itr);
+			]
+			
+			return Scopes.scopeFor(entities)
+		}
+		
+		// All Entities allowed in specification
+		if (context instanceof SpecificationImpl && reference == MyDSLPackage.Literals.SPECIFICATION__REF)
+		{		
+	        val rootElement = EcoreUtil2.getRootContainer(context)
+	        val elements = EcoreUtil2.getAllContentsOfType(rootElement, Entity)
+			return Scopes.scopeFor(elements)
+		}
+		
+		if (context instanceof AttributeImpl && reference.containerClass == Attribute)
+		{
+	        System.out.println(((((context as AttributeImpl).eContainer as SpecificationImpl).ref as EntityImpl).ref as WidgetImpl).properties);
+			return Scopes.scopeFor(((((context as AttributeImpl).eContainer as SpecificationImpl).ref as EntityImpl).ref as WidgetImpl).properties)			
+		}
+		
+		// Add possible properties to specification
+		// Note - filtering by already added is not possible since context.attributes..property is unresolvable proxy
+		if (context instanceof SpecificationImpl && reference == MyDSLPackage.Literals.ATTRIBUTE__REF)
+		{		
+	       
+			val entity = (context as SpecificationImpl).ref
+			
+			val widget = entity.ref
+			if (widget instanceof WidgetImpl)
+			{
+				return Scopes.scopeFor(widget.properties)
+			}
+			return IScope.NULLSCOPE
+		}
+		
+		/*
+		
 		if(context instanceof AttributeImpl){
 			//if (reference == MyDSLPackage.Literals.ATTRIBUTE__RIGHT)
 			if (reference.EReferenceType.instanceClass == Entity)
@@ -52,7 +111,7 @@ class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
 			        val candidates = new ArrayList<EObject>()
 			        candidates.addAll(EcoreUtil2.getAllContentsOfType(rootElement, EntityIdentifier))
 					val entity = container.type
-					if (entity instanceof ChildlessEntityImpl)
+					//if (entity instanceof ChildlessEntityImpl)
 					{
 						val widget = entity.type
 						if (widget instanceof WidgetImpl)
@@ -61,7 +120,7 @@ class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
 							return Scopes.scopeFor(candidates)
 						}					
 					}
-					if (entity instanceof ChildfullEntityImpl)
+					//if (entity instanceof ChildfullEntityImpl)
 					{
 						val widget = entity.type
 						if (widget instanceof WidgetImpl)
@@ -72,9 +131,9 @@ class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
 				}
 			}
 		}
+	*/
 		super.getScope(context, reference)
 	}
-	
 	/*
 	 
 		if (context instanceof SpecificationImpl)

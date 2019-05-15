@@ -6,28 +6,18 @@ Model:
 	('package' name=QualifiedName ';')?
 	imports+=MyImport*
 	
-	widgets+=Widget*
-	entities+=Entity*
-	specifications+=Specification*
+	('Widgets:' widgets+=Widget*)?
+	('Layout:' entities+=Entity*)?
+	('Specifications:' specifications+=Specification*)?
 ;
 
 Entity:
-	ChildlessEntity|ChildfullEntity
-;
-
-ChildlessEntity:
-	WidgetIdentifier name=ID	
-;
-
-ChildfullEntity:	
-	WidgetIdentifier name=ID
-	OPEN
-		(childs+=Entity)*
-	CLOSE
-;
-
-fragment WidgetIdentifier:
-	type=[Widget]
+	ref=[Widget|QualifiedName] name=ID
+	(
+		OPEN
+			(childs+=Entity)*
+		CLOSE
+	)?
 ;
 	
 Widget:
@@ -47,51 +37,28 @@ Property:
 ;
 
 
-fragment EntityIdentifier:
-	type=[Entity]
-;
-
 Specification:
-	EntityIdentifier
+	ref=[Entity]
 	OPEN
 		attributes+=Attribute*
 	CLOSE
 ;
 
-fragment PropertyIdentifier:
-	type=[Property]
-;
 
 Attribute:
-	PropertyIdentifier '=' right=AttributeValue
+	ref=[Property] '=' right=AttributeValue
+;
+
+fragment PropertyType:
+	type=[Property]
 ;
 
 AttributeValue:
 	{AttributeValue} STRING 
 	| {MyIntConstant} INT
-	| {MyDoubleConstant} DOUBLE
 	| {MyBoolConstant} ('true' | 'false')
-    | {MyEntityIdentifier} EntityIdentifier
+    | {MyEntityIdentifier} ref=[Entity|QualifiedName]
 ;
-	
-MyExpression:
-	MyAssignment;
-
-MyAssignment returns MyExpression:
-	MySelectionExpression
-	({MyAssignment.left=current} '=' right=MyExpression)?; // Right associativity
-
-MySelectionExpression returns MyExpression:
-	MyTerminalExpression;
-
-MyTerminalExpression:
-	{MyStringConstant} STRING |
-	{MyIntConstant} INT |
-	{MyDoubleConstant} DOUBLE |
-	{MyBoolConstant} ('true' | 'false')
-	//{MtPropertyRef} property=[PropertyIdentifier] 
-	//|{MySymbolRef} symbol=[EntityIdentifier]
-	;	
 	
 MyImport:
 	'import' importedNamespace=QualifiedNameWithWildcard ';';
@@ -99,12 +66,6 @@ MyImport:
 QualifiedName: ID ('.' ID)* ;
 QualifiedNameWithWildcard: QualifiedName '.*'? ;
 
-fragment MyTypedDeclaration *:
-	type=[Widget|QualifiedName] name=ID
-;
-	
-terminal DOUBLE:
-    INT '.' INT;
     
 terminal OPEN:
 	'{'

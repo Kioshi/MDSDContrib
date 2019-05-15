@@ -39,3 +39,4 @@ TestProject/src-gen/
 *.xtendbin
 *.xtendbin
 **/generated/*
+**/target/*
