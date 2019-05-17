@@ -3,12 +3,24 @@ grammar dk.sdu.martinek.MyDSL with org.eclipse.xtext.common.Terminals
 generate myDSL "http://www.sdu.dk/martinek/MyDSL"
 
 Model:
-	('package' name=QualifiedName ';')?
+	'package' name=QualifiedName ';'
 	imports+=MyImport*
 	
-	('Widgets:' widgets+=Widget*)?
-	('Layout:' entities+=Entity*)?
-	('Specifications:' specifications+=Specification*)?
+	widgets=Widgets?
+	layout=Layout?
+	specifications=Specifications?
+;
+
+Widgets:
+	{Widgets} 'Widgets:' widgets+=Widget*
+;
+
+Layout:
+	{Layout} 'Layout:' entities+=Entity*
+;
+
+Specifications:
+	{Specifications} 'Specifications:' specifications+=Specification*	
 ;
 
 Entity:
@@ -38,7 +50,7 @@ Property:
 
 
 Specification:
-	ref=[Entity]
+	ref=[Entity|QualifiedName]
 	OPEN
 		attributes+=Attribute*
 	CLOSE
@@ -46,11 +58,11 @@ Specification:
 
 
 Attribute:
-	ref=[Property] '=' right=AttributeValue
+	ref=[Property|QualifiedName] '=' right=AttributeValue
 ;
 
 fragment PropertyType:
-	type=[Property]
+	type=[Property|QualifiedName]
 ;
 
 AttributeValue:
