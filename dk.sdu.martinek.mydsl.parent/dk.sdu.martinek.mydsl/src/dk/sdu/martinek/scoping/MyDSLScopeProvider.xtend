@@ -25,6 +25,15 @@ import org.eclipse.emf.ecore.InternalEObject
 import dk.sdu.martinek.myDSL.Widget
 import dk.sdu.martinek.myDSL.Attribute
 import dk.sdu.martinek.myDSL.impl.MyEntityIdentifierImpl
+import org.eclipse.xtext.scoping.impl.ImportUriGlobalScopeProvider
+import java.util.LinkedHashSet
+import org.eclipse.emf.common.util.URI
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.xtext.scoping.impl.ImportedNamespaceAwareLocalScopeProvider
+import org.eclipse.xtext.scoping.impl.ImportNormalizer
+import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.resource.impl.AliasedEObjectDescription
+import org.eclipse.xtext.resource.EObjectDescription
 
 /**
  * This class contains custom scoping description.
@@ -86,18 +95,79 @@ class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
 			return IScope.NULLSCOPE
 		}
 		
+		// Attribute entities
 		if (context instanceof MyEntityIdentifierImpl && reference == MyDSLPackage.Literals.MY_ENTITY_IDENTIFIER__REF)
 		{
+	        val rootElement = EcoreUtil2.getRootContainer(context)
+	        val candidates = EcoreUtil2.getAllContentsOfType(rootElement, Entity)
+			val elements = new ArrayList<EObject>()
+			//elements.addAll(super.getScope(context, reference).allElements.map[itr | itr.EObjectOrProxy])
+			elements.addAll(candidates);
+			//candidates.addAll(elements.filter[itr | itr instanceof Entity].map[itr | itr as Entity])
+			//System.out.println(elements)
+			val s2 = super.getScope(context, reference)
+			val s1 = Scopes.scopeFor(elements, s2)//super.getScope(context, reference)
+			System.out.println(s1)
+			System.out.println(s2)
+			return s1
+			/*
+	        val allElements = super.getScope(context, reference).allElements
+	        val elements = new ArrayList<Entity>()
+	        allElements.forEach[itr| 
+	        	switch(itr)
+	        	{
+	        		
+	        		AliasedEObjectDescription: elements.add(itr.EObjectOrProxy as Entity)// .delegate.element)//System.out.println("a")	
+	        		EObjectDescription: System.out.println("b")	
+	        		default: elements.add(itr.EObjectOrProxy as Entity)
+	        	}       	
+	        ]
+        	System.out.println(elements)	
+	        return Scopes.scopeFor(elements)//super.getScope(context, reference)
+	        val allElements = super.getScope(context, reference).allElements
+	        var elements = new ArrayList<Entity>()
+	        allElements.forEach[itr|
+	        	System.out.println(itr + " " +itr.class.getName())	 
+	        	switch(itr)
+	        	{
+	        		
+	        		AliasedEObjectDescription: System.out.println("a")	
+	        		EObjectDescription: System.out.println("b")	
+	        		default: System.out.println("c")
+	        	}       	
+	        ]
 	        val rootElement = EcoreUtil2.getRootContainer(context)
 	        val entities = EcoreUtil2.getAllContentsOfType(rootElement, Entity)
 	        System.out.println(entities)
 	        return Scopes.scopeFor(entities)
+	        */
 		}
 		
 		// Layout entitites - no need to modify scope
 		if (context instanceof EntityImpl && reference == MyDSLPackage.Literals.ENTITY__REF)
-		{
+		{	
 			return super.getScope(context, reference)
+		}
+		
+		// Attribute entities suggestions
+		if (context instanceof AttributeImpl && reference == MyDSLPackage.Literals.MY_ENTITY_IDENTIFIER__REF)
+		{
+			return Scopes.scopeFor(super.getScope(context, reference).allElements.map[itr | itr.EObjectOrProxy])//super.getScope(context, reference)
+			/*
+	        val allElements = super.getScope(context, reference).allElements
+	        val elements = new ArrayList<Entity>()
+	        allElements.forEach[itr| 
+	        	switch(itr)
+	        	{
+	        		
+	        		AliasedEObjectDescription: elements.add(itr.EObjectOrProxy as Entity)// .delegate.element)//System.out.println("a")	
+	        		EObjectDescription: System.out.println("b")	
+	        		default: elements.add(itr.EObjectOrProxy as Entity)
+	        	}       	
+	        ]
+        	System.out.println(elements)	
+	        return Scopes.scopeFor(elements)//super.getScope(context, reference)
+	        */
 		}
 	
 		super.getScope(context, reference)

@@ -102,7 +102,19 @@ class MyDSLValidator extends AbstractMyDSLValidator {
 				error('Entity ' + entity.name + " can not have childs since its Widget ("+ entity.ref.name +") template dont have defined '_BODY_' in its template", entity, null, MISSING_PROPERTIES)
 			
 		}		
-	}	
+	}
+	
+	def boolean requireSpecification(EntityImpl entity)
+	{
+		val widget = entity.ref
+		if (widget instanceof Widget)
+		{
+			return !widget.properties.empty
+		}
+		//error('Unexpected path occured', entity, null, "internalError") TODO proxy bullshit
+		return false
+		
+	}
 	
 	def boolean isComplete(EntityImpl current, EntityImpl attributeEntity)
 	{
@@ -120,7 +132,7 @@ class MyDSLValidator extends AbstractMyDSLValidator {
     		}
         	return false
         ]
-        if (specification === null)
+        if (requireSpecification(current) && specification === null)
         {
         	return false
         }

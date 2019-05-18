@@ -3,9 +3,35 @@
  */
 package dk.sdu.martinek
 
+import org.eclipse.xtext.naming.IQualifiedNameProvider
+import dk.sdu.martinek.scoping.MyQualifiedNameProvider
+import dk.sdu.martinek.AbstractMyDSLRuntimeModule
+import com.google.inject.Binder
+import org.eclipse.xtext.scoping.IScopeProvider
+import com.google.inject.name.Names
+import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
+import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
+import dk.sdu.martinek.scoping.MyDSLImportedNamespaceAwareLocalScopeProvider
+import dk.sdu.martinek.scoping.MyDSLResourceDescriptionsStrategy
 
 /**
  * Use this class to register components to be used at runtime / without the Equinox extension registry.
  */
 class MyDSLRuntimeModule extends AbstractMyDSLRuntimeModule {
+	
+	override void configureIScopeProviderDelegate(Binder binder) {
+		binder.bind(IScopeProvider).annotatedWith(
+			Names.named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE)
+		).to(
+			MyDSLImportedNamespaceAwareLocalScopeProvider
+		)
+	}
+
+	def Class<? extends IDefaultResourceDescriptionStrategy> bindIDefaultResourceDescriptionStrategy() {
+		return MyDSLResourceDescriptionsStrategy;
+	}
+	
+	override Class<? extends IQualifiedNameProvider> bindIQualifiedNameProvider() {
+		return MyQualifiedNameProvider;
+	}
 }
