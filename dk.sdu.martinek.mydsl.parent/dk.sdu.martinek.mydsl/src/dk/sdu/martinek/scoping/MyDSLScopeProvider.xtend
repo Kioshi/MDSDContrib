@@ -3,37 +3,25 @@
  */
 package dk.sdu.martinek.scoping
 
+import dk.sdu.martinek.myDSL.Attribute
+import dk.sdu.martinek.myDSL.Entity
+import dk.sdu.martinek.myDSL.MyDSLPackage
+import dk.sdu.martinek.myDSL.Specification
+import dk.sdu.martinek.myDSL.impl.AttributeImpl
+import dk.sdu.martinek.myDSL.impl.EntityImpl
+import dk.sdu.martinek.myDSL.impl.ModelImpl
+import dk.sdu.martinek.myDSL.impl.MyEntityIdentifierImpl
 import dk.sdu.martinek.myDSL.impl.SpecificationImpl
 import dk.sdu.martinek.myDSL.impl.WidgetImpl
+import java.util.ArrayList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.resource.EObjectDescription
+import org.eclipse.xtext.resource.impl.AliasedEObjectDescription
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
-import dk.sdu.martinek.myDSL.MyDSLPackage
-import dk.sdu.martinek.myDSL.Entity
-import dk.sdu.martinek.myDSL.impl.ModelImpl
-import dk.sdu.martinek.myDSL.impl.EntityImpl
-import java.util.ArrayList
-import dk.sdu.martinek.myDSL.Specification
-import dk.sdu.martinek.myDSL.impl.AttributeImpl
-import java.util.List
-import dk.sdu.martinek.myDSL.Property
-import dk.sdu.martinek.myDSL.impl.PropertyImpl
-import org.eclipse.emf.ecore.util.EcoreUtil
-import org.eclipse.emf.ecore.InternalEObject
-import dk.sdu.martinek.myDSL.Widget
-import dk.sdu.martinek.myDSL.Attribute
-import dk.sdu.martinek.myDSL.impl.MyEntityIdentifierImpl
-import org.eclipse.xtext.scoping.impl.ImportUriGlobalScopeProvider
-import java.util.LinkedHashSet
-import org.eclipse.emf.common.util.URI
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.scoping.impl.ImportedNamespaceAwareLocalScopeProvider
-import org.eclipse.xtext.scoping.impl.ImportNormalizer
-import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.xtext.resource.impl.AliasedEObjectDescription
-import org.eclipse.xtext.resource.EObjectDescription
+import org.eclipse.xtext.scoping.impl.FilteringScope
 
 /**
  * This class contains custom scoping description.
@@ -101,46 +89,10 @@ class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
 	        val rootElement = EcoreUtil2.getRootContainer(context)
 	        val candidates = EcoreUtil2.getAllContentsOfType(rootElement, Entity)
 			val elements = new ArrayList<EObject>()
-			//elements.addAll(super.getScope(context, reference).allElements.map[itr | itr.EObjectOrProxy])
 			elements.addAll(candidates);
-			//candidates.addAll(elements.filter[itr | itr instanceof Entity].map[itr | itr as Entity])
-			//System.out.println(elements)
 			val s2 = super.getScope(context, reference)
-			val s1 = Scopes.scopeFor(elements, s2)//super.getScope(context, reference)
-			System.out.println(s1)
-			System.out.println(s2)
+			val s1 = Scopes.scopeFor(elements, s2)
 			return s1
-			/*
-	        val allElements = super.getScope(context, reference).allElements
-	        val elements = new ArrayList<Entity>()
-	        allElements.forEach[itr| 
-	        	switch(itr)
-	        	{
-	        		
-	        		AliasedEObjectDescription: elements.add(itr.EObjectOrProxy as Entity)// .delegate.element)//System.out.println("a")	
-	        		EObjectDescription: System.out.println("b")	
-	        		default: elements.add(itr.EObjectOrProxy as Entity)
-	        	}       	
-	        ]
-        	System.out.println(elements)	
-	        return Scopes.scopeFor(elements)//super.getScope(context, reference)
-	        val allElements = super.getScope(context, reference).allElements
-	        var elements = new ArrayList<Entity>()
-	        allElements.forEach[itr|
-	        	System.out.println(itr + " " +itr.class.getName())	 
-	        	switch(itr)
-	        	{
-	        		
-	        		AliasedEObjectDescription: System.out.println("a")	
-	        		EObjectDescription: System.out.println("b")	
-	        		default: System.out.println("c")
-	        	}       	
-	        ]
-	        val rootElement = EcoreUtil2.getRootContainer(context)
-	        val entities = EcoreUtil2.getAllContentsOfType(rootElement, Entity)
-	        System.out.println(entities)
-	        return Scopes.scopeFor(entities)
-	        */
 		}
 		
 		// Layout entitites - no need to modify scope
@@ -152,73 +104,19 @@ class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
 		// Attribute entities suggestions
 		if (context instanceof AttributeImpl && reference == MyDSLPackage.Literals.MY_ENTITY_IDENTIFIER__REF)
 		{
-			return Scopes.scopeFor(super.getScope(context, reference).allElements.map[itr | itr.EObjectOrProxy])//super.getScope(context, reference)
-			/*
-	        val allElements = super.getScope(context, reference).allElements
-	        val elements = new ArrayList<Entity>()
-	        allElements.forEach[itr| 
-	        	switch(itr)
-	        	{
-	        		
-	        		AliasedEObjectDescription: elements.add(itr.EObjectOrProxy as Entity)// .delegate.element)//System.out.println("a")	
-	        		EObjectDescription: System.out.println("b")	
-	        		default: elements.add(itr.EObjectOrProxy as Entity)
-	        	}       	
-	        ]
-        	System.out.println(elements)	
-	        return Scopes.scopeFor(elements)//super.getScope(context, reference)
-	        */
+			val scope = super.getScope(context, reference)
+			val x = new FilteringScope(scope, [itr| 
+				if (itr instanceof AliasedEObjectDescription || itr.class === EObjectDescription)
+				{
+					return false
+				}
+				return true
+			])
+	        val rootElement = EcoreUtil2.getRootContainer(context)
+	        val candidates = EcoreUtil2.getAllContentsOfType(rootElement, Entity)
+			return Scopes.scopeFor(candidates, x)
 		}
 	
 		super.getScope(context, reference)
-	}
-	/*
-	 
-		if (context instanceof SpecificationImpl)
-		{
-			container = context
-		}
-		else if (context instanceof AttributeImpl)
-		{
-			container = context.eContainer;
-			if (reference.EReferenceType.instanceClass == Entity)
-			{				
-		        val rootElement = EcoreUtil2.getRootContainer(context)
-		        val candidates = EcoreUtil2.getAllContentsOfType(rootElement, Entity)
-		        if (container instanceof SpecificationImpl)
-		        {
-		        	candidates.remove(container.type)
-		        }
-
-		        return Scopes.scopeFor(candidates)
-			}
-		}
-		
-		if (container instanceof SpecificationImpl)
-		{
-	        val rootElement = EcoreUtil2.getRootContainer(context)
-	        val candidates = new ArrayList<EObject>()
-	        candidates.addAll(EcoreUtil2.getAllContentsOfType(rootElement, EntityIdentifier))
-			val entity = container.type
-			if (entity instanceof ChildlessEntityImpl)
-			{
-				val widget = entity.type
-				if (widget instanceof WidgetImpl)
-				{
-	        		candidates.addAll(widget.properties)
-					return Scopes.scopeFor(candidates)
-				}					
-			}
-			if (entity instanceof ChildfullEntityImpl)
-			{
-				val widget = entity.type
-				if (widget instanceof WidgetImpl)
-				{
-					return Scopes.scopeFor(widget.properties)
-				}
-			}
-		}
-		
-	 */
-	
+	}	
 }

@@ -93,7 +93,7 @@ class MyDSLValidator extends AbstractMyDSLValidator {
 	@Check
 	def checkIfEntityCanHaveChild(Entity entity) 
 	{
-		if (!entity.childs.empty)
+		if (!entity.entities.empty)
 		{
 			val pattern = Pattern.compile("_BODY_");
 	        val matcher = pattern.matcher(entity.ref.template.value);
@@ -111,13 +111,12 @@ class MyDSLValidator extends AbstractMyDSLValidator {
 		{
 			return !widget.properties.empty
 		}
-		//error('Unexpected path occured', entity, null, "internalError") TODO proxy bullshit
-		return false
-		
+		return false		
 	}
 	
 	def boolean isComplete(EntityImpl current, EntityImpl attributeEntity)
 	{
+        EcoreUtil2.resolveAll(current)
 		if (current == attributeEntity)
 		{
 			return false
@@ -132,6 +131,7 @@ class MyDSLValidator extends AbstractMyDSLValidator {
     		}
         	return false
         ]
+        
         if (requireSpecification(current) && specification === null)
         {
         	return false
@@ -142,12 +142,22 @@ class MyDSLValidator extends AbstractMyDSLValidator {
         	val value = attr.right
         	if (value instanceof MyEntityIdentifierImpl)
         	{
+        		if (current === value.ref)
+        		{
+        			return false
+        		}
         		if (!isComplete(value.ref as EntityImpl, attributeEntity))
         		{
         			return false
         		}
         	}
         }
+        if (specification.attributes.length != current.ref.properties.length)
+        {
+        	return false
+        }
+        
+        
 		return true
 	}
 	
