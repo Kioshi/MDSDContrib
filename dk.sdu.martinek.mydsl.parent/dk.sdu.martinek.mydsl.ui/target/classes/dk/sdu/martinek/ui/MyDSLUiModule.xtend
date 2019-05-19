@@ -33,6 +33,7 @@ public class MyDslSemanticHighlightingCalculator extends DefaultSemanticHighligh
 	@Inject	MyDSLGrammarAccess ga;
 
 	// Color first word of entity (Widget identifier)	
+	/*
 	override void provideHighlightingFor(XtextResource resource, IHighlightedPositionAcceptor acceptor, CancelIndicator cancelIndicator)
 	{
 		val rootNode = resource.getParseResult().getRootNode();
@@ -46,4 +47,5 @@ public class MyDslSemanticHighlightingCalculator extends DefaultSemanticHighligh
 		}
 		super.provideHighlightingFor(resource, acceptor, cancelIndicator);
 	}
+	*/
 }

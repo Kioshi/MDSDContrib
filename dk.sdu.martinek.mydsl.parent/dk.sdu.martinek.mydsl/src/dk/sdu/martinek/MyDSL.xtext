@@ -4,32 +4,26 @@ generate myDSL "http://www.sdu.dk/martinek/MyDSL"
 
 Model:
 	'package' name=QualifiedName ';'
-	imports+=MyImport*
+	imports+=Import*
 	
+	headers=Headers
 	widgets=Widgets?
-	layout=Layout?
-	specifications=Specifications?
+	entities=Entities?
+	layout=Layouts?
+;
+
+QualifiedName: ID ('.' ID)* ;
+QualifiedNameWithWildcard: QualifiedName '.*'? ;
+
+Import:
+	'import' importedNamespace=QualifiedNameWithWildcard ';';
+
+Headers:
+	{Headers} 'Headers:' headers+=STRING*
 ;
 
 Widgets:
 	{Widgets} 'Widgets:' widgets+=Widget*
-;
-
-Layout:
-	{Layout} 'Layout:' entities+=Entity*
-;
-
-Specifications:
-	{Specifications} 'Specifications:' specifications+=Specification*	
-;
-
-Entity:
-	ref=[Widget|QualifiedName] name=ID
-	(
-		OPEN
-			(childs+=Entity)*
-		CLOSE
-	)?
 ;
 	
 Widget:
@@ -42,41 +36,48 @@ Widget:
 
 Template:
 	'template' value=STRING
-;	
+;
 
 Property:
-	'property' name=ID
+	'property' name=ID ('=' defaultValue=AttributeValue)?
 ;
 
-
-Specification:
-	ref=[Entity|QualifiedName]
-	OPEN
-		attributes+=Attribute*
-	CLOSE
+Entities:
+	{Specifications} 'Elements:' entities+=Entity*	
 ;
 
+Entity:
+	ref=[Widget|QualifiedName] name=ID
+	(
+		OPEN
+			attributes+=Attribute*
+		CLOSE
+	)?
+;
 
 Attribute:
 	ref=[Property|QualifiedName] '=' right=AttributeValue
 ;
 
-fragment PropertyType:
-	type=[Property|QualifiedName]
+AttributeValue:
+	  {MyStringValue}		val=STRING
+	| {MyIntConstant}		val=INT
+	| {MyBoolConstant}		val=('true' | 'false')
+    | {MyEntityIdentifier}	ref=[Entity|QualifiedName]
 ;
 
-AttributeValue:
-	{AttributeValue} STRING 
-	| {MyIntConstant} INT
-	| {MyBoolConstant} ('true' | 'false')
-    | {MyEntityIdentifier} ref=[Entity|QualifiedName]
+Layouts:
+	{Layout} 'Layout:' layouts+=Layout*
 ;
-	
-MyImport:
-	'import' importedNamespace=QualifiedNameWithWildcard ';';
-	
-QualifiedName: ID ('.' ID)* ;
-QualifiedNameWithWildcard: QualifiedName '.*'? ;
+
+Layout:
+	ref=[Entity|QualifiedName]
+	(
+	OPEN
+		childs+=Layout*
+	CLOSE
+	)?
+;
 
     
 terminal OPEN:

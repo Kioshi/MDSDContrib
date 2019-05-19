@@ -3,18 +3,19 @@
  */
 package dk.sdu.martinek.validation
 
+import dk.sdu.martinek.myDSL.Attribute
+import dk.sdu.martinek.myDSL.Entity
+import dk.sdu.martinek.myDSL.Layout
+import dk.sdu.martinek.myDSL.MyEntityIdentifier
+import dk.sdu.martinek.myDSL.Property
 import dk.sdu.martinek.myDSL.Widget
+import dk.sdu.martinek.myDSL.impl.EntityImpl
 import java.util.ArrayList
+import java.util.List
 import java.util.regex.Pattern
 import java.util.stream.Collectors
-import org.eclipse.xtext.validation.Check
-import dk.sdu.martinek.myDSL.Entity
-import dk.sdu.martinek.myDSL.Attribute
-import dk.sdu.martinek.myDSL.impl.MyEntityIdentifierImpl
-import dk.sdu.martinek.myDSL.impl.SpecificationImpl
-import dk.sdu.martinek.myDSL.impl.EntityImpl
 import org.eclipse.xtext.EcoreUtil2
-import dk.sdu.martinek.myDSL.Specification
+import org.eclipse.xtext.validation.Check
 
 /**
  * This class contains custom validation rules. 
@@ -22,6 +23,10 @@ import dk.sdu.martinek.myDSL.Specification
  * See https://www.eclipse.org/Xtext/documentation/303_runtime_concepts.html#validation
  */
 class MyDSLValidator extends AbstractMyDSLValidator {
+		
+	public static val BODY_PROPERTY = "__BODY__"
+	public static val ID_PROPERTY = "__ID__"
+	
 	
 	public static val INVALID_NAME = 'invalidName'
 
@@ -72,92 +77,82 @@ class MyDSLValidator extends AbstractMyDSLValidator {
         		error('Properties ' + missingProperties.stream().collect( Collectors.joining( "," ) ) + " are not defined in Widget", element.template, null, MISSING_PROPERTIES)
     		else
         		error('Property ' + missingProperties.get(0) + " is not defined in Widget", element.template, null, "missingBody")
-        	
         }
 		
 	}
 	
 	@Check
-	def checkIfWidgetHaveMultipleBodyReferencesInTemplate(Widget widget) 
+	def checkPropertyForReservedName(Property property)
 	{
-		val pattern = Pattern.compile("_BODY_");
-        val matcher = pattern.matcher(widget.template.value);
-		var count = 0;
-		while (matcher.find())
-		    count++;
-		if (count > 1)
-			error("Widget's "+ widget.name +" template have defined '_BODY_' multiple times", widget, null, "multipleBodies")
-
-	}	
+		switch(property.name)
+		{
+			case BODY_PROPERTY,
+			case ID_PROPERTY:
+				error(property.name + " is namer reserved for internal purposes and should not be used as property", property, null, "reservedName")
+		}
+	}
 	
 	@Check
-	def checkIfEntityCanHaveChild(Entity entity) 
+	def checkIfEntityCanHaveChild(Layout layout) 
 	{
-		if (!entity.entities.empty)
+		if (!layout.childs.empty)
 		{
-			val pattern = Pattern.compile("_BODY_");
+			val pattern = Pattern.compile(BODY_PROPERTY);
+			val entity = layout.ref
 	        val matcher = pattern.matcher(entity.ref.template.value);
 	
 			if (!matcher.find())
-				error('Entity ' + entity.name + " can not have childs since its Widget ("+ entity.ref.name +") template dont have defined '_BODY_' in its template", entity, null, MISSING_PROPERTIES)
-			
-		}		
-	}
-	
-	def boolean requireSpecification(EntityImpl entity)
-	{
-		val widget = entity.ref
-		if (widget instanceof Widget)
-		{
-			return !widget.properties.empty
+				error('Layout ' + entity.name + " can not have childs since its Widget ("+ entity.ref.name +") template dont have defined '"+BODY_PROPERTY+"' in its template", layout, null, MISSING_PROPERTIES)	
 		}
-		return false		
 	}
 	
-	def boolean isComplete(EntityImpl current, EntityImpl attributeEntity)
+	@Check
+	def checkIfEntityHaveProperties(Entity entity)
 	{
-        EcoreUtil2.resolveAll(current)
-		if (current == attributeEntity)
+		getListOfMissingAttributes(entity).forEach[str|
+			error(str, entity, null, "missinAttribute")			
+		]
+	}
+	
+	def List<String> getListOfMissingAttributes(Entity entity)
+	{
+		var list = newArrayList()
+		for (Property prop : entity.ref.properties)
+		{
+			val attrProp = entity.attributes.findFirst[itr|
+				return (itr as Attribute).ref == prop
+			]
+			
+			if (attrProp === null && prop.defaultValue === null)
+			{
+				list.add('Attribute ' + prop.name + " is mising in element definition")
+			}
+		}
+		return list		
+	}
+	
+	def boolean isComplete(Entity current, List<Entity> previous)
+	{
+        //EcoreUtil2.resolveAll(current)
+		if (previous.contains(current))
+		{
+			return false
+		}
+		previous.add(current)
+		
+		if (!getListOfMissingAttributes(current).empty)
 		{
 			return false
 		}
 		
-        val rootElement = EcoreUtil2.getRootContainer(current)
-        val specifications = EcoreUtil2.getAllContentsOfType(rootElement, Specification)
-        val specification = specifications.findFirst[spec|
-        	if (spec.ref == current as Entity)
-        	{
-        		return true
-    		}
-        	return false
-        ]
-        
-        if (requireSpecification(current) && specification === null)
+        val entities = EcoreUtil2.getAllContentsOfType(current, MyEntityIdentifier)
+        for (MyEntityIdentifier entity : entities)
         {
-        	return false
+    		if (!isComplete(entity.ref, previous))
+    		{
+    			return false
+    		}        	
         }
-        
-        for (Attribute attr : specification.attributes)
-        {
-        	val value = attr.right
-        	if (value instanceof MyEntityIdentifierImpl)
-        	{
-        		if (current === value.ref)
-        		{
-        			return false
-        		}
-        		if (!isComplete(value.ref as EntityImpl, attributeEntity))
-        		{
-        			return false
-        		}
-        	}
-        }
-        if (specification.attributes.length != current.ref.properties.length)
-        {
-        	return false
-        }
-        
-        
 		return true
 	}
 	
@@ -165,11 +160,11 @@ class MyDSLValidator extends AbstractMyDSLValidator {
 	def checkIfAttributeValueEntityIsComplete(Attribute attribute) 
 	{
 		val value = attribute.right
-		if (value instanceof MyEntityIdentifierImpl)
+		if (value instanceof MyEntityIdentifier)
 		{
-			if (!isComplete(value.ref as EntityImpl, (attribute.eContainer as SpecificationImpl).ref as EntityImpl))
+			if (!isComplete(value.ref as Entity, newArrayList(attribute.eContainer as Entity)))
 			{
-				error('Entity '+((attribute.eContainer as SpecificationImpl).ref as EntityImpl).name+' specification attribute "' + attribute.ref.name + ' = '+ (value.ref as EntityImpl).name +'" references entity whose specification is not complete (or include cyclic reference)', attribute, null, "inclompleteEntity")
+				error('Entity '+(attribute.eContainer as Entity).name+' specification attribute "' + attribute.ref.name + ' = '+ (value.ref as EntityImpl).name +'" references entity whose specification is not complete (or include cyclic reference)', attribute, null, "inclompleteEntity")
 			}
 		}
 	}
