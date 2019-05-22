@@ -24,6 +24,7 @@ import org.eclipse.xtext.ui.editor.syntaxcoloring.DefaultHighlightingConfigurati
 import dk.sdu.martinek.myDSL.Layout
 import org.eclipse.xtext.RuleCall
 import dk.sdu.martinek.myDSL.Entity
+import org.eclipse.xtext.impl.TerminalRuleImpl
 
 /**
  * Use this class to register components to be used within the Eclipse IDE.
@@ -63,6 +64,11 @@ public class MyDslSemanticHighlightingCalculator extends DefaultSemanticHighligh
 					case ga.attributeAccess.refPropertyCrossReference_0_0,
 					case ga.propertyAccess.nameIDTerminalRuleCall_2_0:
 						acceptor.addPosition(node.offset, node.length, MyDSLHighlightingConfiguration.PROPERTY_ID)
+					case ga.widgetsAccess.widgetsKeyword_1,
+					case ga.entitiesAccess.elementsKeyword_1,
+					case ga.layoutsAccess.layoutKeyword_1,
+					case ga.headersAccess.headersKeyword_1:
+						acceptor.addPosition(node.offset, node.length, MyDSLHighlightingConfiguration.LABEL_ID)
 				}
 		}
 		super.provideHighlightingFor(resource, acceptor, cancelIndicator);
@@ -75,12 +81,15 @@ class MyDSLHighlightingConfiguration extends DefaultHighlightingConfiguration {
   public static final String WIDGET_ID = "widget";
   public static final String WIDGET_TYPE_ID = "widget_type";
   public static final String PROPERTY_ID = "property";
+  public static final String LABEL_ID = "label";
+ 
  
   override configure(IHighlightingConfigurationAcceptor acceptor) {
-    acceptor.acceptDefaultHighlighting(ENTITY_ID, "Entity", coloredStyle(0,0,200));
+    acceptor.acceptDefaultHighlighting(ENTITY_ID, "Entity", coloredStyle(200,0,200));
     acceptor.acceptDefaultHighlighting(WIDGET_ID, "Widget", coloredStyle(0,200,0));
     acceptor.acceptDefaultHighlighting(WIDGET_TYPE_ID, "WidgetType", coloredBoldStyle(0,200,0));
     acceptor.acceptDefaultHighlighting(PROPERTY_ID, "Property", coloredStyle(200,0,0));
+    acceptor.acceptDefaultHighlighting(LABEL_ID, "Label", coloredBoldStyle(200,200,0));
 	super.configure(acceptor)
   }
   
