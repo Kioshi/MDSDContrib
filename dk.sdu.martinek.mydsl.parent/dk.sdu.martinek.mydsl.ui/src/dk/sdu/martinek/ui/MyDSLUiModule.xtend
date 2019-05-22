@@ -13,9 +13,17 @@ import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.nodemodel.ICompositeNode
 import org.eclipse.xtext.nodemodel.INode
 import javax.inject.Inject
-import org.eclipse.xtext.ui.editor.syntaxcoloring.DefaultHighlightingConfiguration
 import org.eclipse.xtext.nodemodel.impl.CompositeNodeWithSemanticElement
 import dk.sdu.martinek.myDSL.impl.EntityImpl
+import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingConfiguration
+import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingConfigurationAcceptor
+import org.eclipse.xtext.ui.editor.utils.TextStyle
+import org.eclipse.swt.graphics.RGB
+import org.eclipse.swt.SWT
+import org.eclipse.xtext.ui.editor.syntaxcoloring.DefaultHighlightingConfiguration
+import dk.sdu.martinek.myDSL.Layout
+import org.eclipse.xtext.RuleCall
+import dk.sdu.martinek.myDSL.Entity
 
 /**
  * Use this class to register components to be used within the Eclipse IDE.
@@ -26,26 +34,64 @@ class MyDSLUiModule extends AbstractMyDSLUiModule
 	def Class<? extends ISemanticHighlightingCalculator> bindISemanticHighlightingCalculator() {
 		MyDslSemanticHighlightingCalculator
 	}
+	
+	def Class<? extends IHighlightingConfiguration> bindIHighlightingConfiguration () {
+	    return MyDSLHighlightingConfiguration
+	  }
 }
 
 public class MyDslSemanticHighlightingCalculator extends DefaultSemanticHighlightingCalculator
 {
 	@Inject	MyDSLGrammarAccess ga;
 
-	// Color first word of entity (Widget identifier)	
-	/*
-	override void provideHighlightingFor(XtextResource resource, IHighlightedPositionAcceptor acceptor, CancelIndicator cancelIndicator)
-	{
+	
+	override provideHighlightingFor(XtextResource resource, IHighlightedPositionAcceptor acceptor, CancelIndicator cancelIndicator) {
 		val rootNode = resource.getParseResult().getRootNode();
-		for (INode node : rootNode.getAsTreeIterable()) {
-			if (node instanceof CompositeNodeWithSemanticElement)
-			{
-				node.firstChild.grammarElement;
-				if (node.semanticElement instanceof EntityImpl)
-					acceptor.addPosition(node.firstChild.getOffset(), node.firstChild.getLength(), DefaultHighlightingConfiguration.KEYWORD_ID);
-			}
+		
+		for (INode node : rootNode.getAsTreeIterable()) { 
+				switch node.grammarElement
+				{
+					case ga.entityAccess.refWidgetCrossReference_0_0:
+						acceptor.addPosition(node.offset, node.length, MyDSLHighlightingConfiguration.WIDGET_TYPE_ID)
+					case ga.widgetAccess.nameIDTerminalRuleCall_1_0:
+						acceptor.addPosition(node.offset, node.length, MyDSLHighlightingConfiguration.WIDGET_ID)
+					case ga.entityAccess.parentEntityCrossReference_2_1_0,
+					case ga.attributeValueAccess.myEntityIdentifierAction_3_0,
+					case ga.entityAccess.nameIDTerminalRuleCall_1_0,
+					case ga.layoutAccess.refEntityCrossReference_0_0:
+						acceptor.addPosition(node.offset, node.length, MyDSLHighlightingConfiguration.ENTITY_ID)
+					case ga.attributeAccess.refPropertyCrossReference_0_0,
+					case ga.propertyAccess.nameIDTerminalRuleCall_2_0:
+						acceptor.addPosition(node.offset, node.length, MyDSLHighlightingConfiguration.PROPERTY_ID)
+				}
 		}
 		super.provideHighlightingFor(resource, acceptor, cancelIndicator);
 	}
-	*/
+}
+
+class MyDSLHighlightingConfiguration extends DefaultHighlightingConfiguration {
+ 
+  public static final String ENTITY_ID = "entity";
+  public static final String WIDGET_ID = "widget";
+  public static final String WIDGET_TYPE_ID = "widget_type";
+  public static final String PROPERTY_ID = "property";
+ 
+  override configure(IHighlightingConfigurationAcceptor acceptor) {
+    acceptor.acceptDefaultHighlighting(ENTITY_ID, "Entity", coloredStyle(0,0,200));
+    acceptor.acceptDefaultHighlighting(WIDGET_ID, "Widget", coloredStyle(0,200,0));
+    acceptor.acceptDefaultHighlighting(WIDGET_TYPE_ID, "WidgetType", coloredBoldStyle(0,200,0));
+    acceptor.acceptDefaultHighlighting(PROPERTY_ID, "Property", coloredStyle(200,0,0));
+	super.configure(acceptor)
+  }
+  
+	def TextStyle coloredStyle(int r, int g, int b) {
+	    val textStyle = new TextStyle();
+	    textStyle.setColor(new RGB(r,g,b));
+	    return textStyle;
+	}
+	def TextStyle coloredBoldStyle(int r, int g, int b) {
+	    val textStyle = coloredStyle(r,g,b);
+	    textStyle.style = SWT.BOLD;
+	    return textStyle;
+	}
 }

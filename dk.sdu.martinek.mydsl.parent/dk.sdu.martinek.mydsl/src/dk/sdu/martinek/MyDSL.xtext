@@ -43,7 +43,7 @@ Template:
 ;
 
 Property:
-	'property' name=ID ('=' defaultValue=AttributeValue)?
+	{Property}'property' name=ID ('=' defaultValue=AttributeValue)?
 ;
 
 Entities:
