@@ -15,6 +15,8 @@ import java.util.regex.Pattern
 import java.util.stream.Collectors
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.validation.Check
+import dk.sdu.martinek.myDSL.Header
+import java.io.File
 
 /**
  * This class contains custom validation rules. 
@@ -206,6 +208,21 @@ class MyDSLValidator extends AbstractMyDSLValidator {
 		if (entity.parent !== null && entity.ref != entity.parent.ref)
 		{
 			error("Parent have to be same type (widget) as element!", entity, null, "entityParentType")			
+		}
+	}
+	
+	@Check
+	def checkIfHeaderFileExists(Header header)
+	{
+		if (header.type == "custom")
+		{
+			return
+		}
+		
+		val file = new File(header.value)
+		if (!file.exists)
+		{
+			error("File "+header.value+" not found!", header, null, "headerFileNotFound")
 		}
 	}
 }

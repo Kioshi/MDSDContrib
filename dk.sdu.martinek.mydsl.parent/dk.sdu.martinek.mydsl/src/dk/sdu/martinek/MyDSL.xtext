@@ -19,7 +19,11 @@ Import:
 	'import' importedNamespace=QualifiedNameWithWildcard ';';
 
 Headers:
-	{Headers} 'Headers:' headers+=STRING*
+	{Headers} 'Headers:' headers+=Header*
+;
+
+Header:
+	{Header} type=("style"|"script"|"custom") value=STRING
 ;
 
 Widgets:

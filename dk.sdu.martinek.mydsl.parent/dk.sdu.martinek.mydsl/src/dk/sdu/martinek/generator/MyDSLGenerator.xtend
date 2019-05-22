@@ -8,7 +8,6 @@ import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
 import dk.sdu.martinek.myDSL.Model
-import dk.sdu.martinek.myDSL.Import
 import dk.sdu.martinek.myDSL.Headers
 import dk.sdu.martinek.myDSL.Layouts
 import dk.sdu.martinek.myDSL.Layout
@@ -22,7 +21,8 @@ import dk.sdu.martinek.myDSL.Property
 import dk.sdu.martinek.validation.MyDSLValidator
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import com.google.inject.Inject
-import org.eclipse.xtext.EcoreUtil2
+import dk.sdu.martinek.myDSL.Header
+import java.io.File
 
 /**
  * Generates code from your model files on save.
@@ -70,11 +70,32 @@ class MyDSLGenerator extends AbstractGenerator {
 		{
 			return ""
 		}
-		var String res
-		for (String header : headers.headers)
+		var String res = ""
+		for (Header header : headers.headers)
 		{
-			res += header + "\n"
+			res += header.generate + "\n"
 		}
+		return res
+	}
+	
+	def String generate(Header header)
+	{
+		var String res = ""
+	
+		if (header.type == "custom")
+		{
+			return header.value
+		}
+		else
+		{
+			val file = new File(header.value)
+			switch header.type
+			{
+				case "style": res = '<link rel="stylesheet" type="text/css" href="'+file.canonicalPath +'">'
+				case "script": res = '<script src="'+file.canonicalPath+'"></script>'
+			}
+		}
+		
 		return res
 	}
 	

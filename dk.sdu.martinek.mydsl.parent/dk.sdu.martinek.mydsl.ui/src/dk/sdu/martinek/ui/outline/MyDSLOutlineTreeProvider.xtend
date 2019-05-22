@@ -4,8 +4,6 @@
 package dk.sdu.martinek.ui.outline
 
 import org.eclipse.xtext.ui.editor.outline.impl.DefaultOutlineTreeProvider
-import com.google.inject.Inject
-import org.eclipse.xtext.ui.label.StylerFactory
 import dk.sdu.martinek.myDSL.Headers
 import dk.sdu.martinek.myDSL.Widgets
 import dk.sdu.martinek.myDSL.Entities

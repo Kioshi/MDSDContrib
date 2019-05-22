@@ -41,3 +41,4 @@ TestProject/src-gen/
 **/generated/*
 **/target/*
 **/target/*
+**/.gradle/
