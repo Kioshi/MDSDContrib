@@ -121,7 +121,7 @@ class MyDSLGenerator extends AbstractGenerator {
 			if (properties.contains(attr.ref))
 			{
 				var value = ""
-				switch(attr.right)
+				switch attr.right
 				{
 					MyStringValue: value = (attr.right as MyStringValue).^val
 					MyIntConstant: value = (attr.right as MyIntConstant).^val.toString
