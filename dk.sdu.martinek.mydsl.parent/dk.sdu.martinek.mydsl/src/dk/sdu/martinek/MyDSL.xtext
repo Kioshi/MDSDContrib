@@ -9,7 +9,7 @@ Model:
 	headers=Headers
 	widgets=Widgets?
 	entities=Entities?
-	layout=Layouts?
+	layouts=Layouts?
 ;
 
 QualifiedName: ID ('.' ID)* ;
@@ -47,7 +47,7 @@ Entities:
 ;
 
 Entity:
-	ref=[Widget|QualifiedName] name=ID
+	ref=[Widget|QualifiedName] name=ID (":" parent=[Entity|QualifiedName])?
 	(
 		OPEN
 			attributes+=Attribute*
@@ -67,7 +67,7 @@ AttributeValue:
 ;
 
 Layouts:
-	{Layout} 'Layout:' layouts+=Layout*
+	{Layouts} 'Layout:' layouts+=Layout*
 ;
 
 Layout:

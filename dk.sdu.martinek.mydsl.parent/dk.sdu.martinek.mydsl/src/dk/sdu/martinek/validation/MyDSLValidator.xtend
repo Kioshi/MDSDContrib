@@ -9,7 +9,6 @@ import dk.sdu.martinek.myDSL.Layout
 import dk.sdu.martinek.myDSL.MyEntityIdentifier
 import dk.sdu.martinek.myDSL.Property
 import dk.sdu.martinek.myDSL.Widget
-import dk.sdu.martinek.myDSL.impl.EntityImpl
 import java.util.ArrayList
 import java.util.List
 import java.util.regex.Pattern
@@ -119,41 +118,58 @@ class MyDSLValidator extends AbstractMyDSLValidator {
 		var list = newArrayList()
 		for (Property prop : entity.ref.properties)
 		{
-			val attrProp = entity.attributes.findFirst[itr|
-				return (itr as Attribute).ref == prop
-			]
-			
-			if (attrProp === null && prop.defaultValue === null)
+			if (prop.defaultValue === null)
 			{
-				list.add('Attribute ' + prop.name + " is mising in element definition")
-			}
+				val attrProp = entity.attributes.findFirst[itr|
+					return (itr as Attribute).ref == prop
+				]
+				
+				if (attrProp === null)
+				{
+					if (entity.parent === null || entity.parent.attributes.findFirst[itr|(itr as Attribute).ref == prop] === null)
+					{
+						list.add('Attribute ' + prop.name + " is mising in element definition")
+					}
+				}
+			}			
 		}
 		return list		
 	}
 	
-	def boolean isComplete(Entity current, List<Entity> previous)
+	def String isComplete(Entity current, List<Entity> previous)
 	{
         //EcoreUtil2.resolveAll(current)
 		if (previous.contains(current))
 		{
-			return false
+			return "Cyclic reference: " + current.name + " was already referenced before - "+ previous.map[itr| itr.name].toString
 		}
 		previous.add(current)
 		
 		if (!getListOfMissingAttributes(current).empty)
 		{
-			return false
+			return "Element " + current.name + " missing attribute definitions"
+		}
+		
+		// Check parrent
+		if (current.parent !== null)
+		{
+			val res = isComplete(current.parent, previous)
+			if (res !== null)
+			{
+				return "Parent of element " + current.name +" causing error: "+ res;				
+			}
 		}
 		
         val entities = EcoreUtil2.getAllContentsOfType(current, MyEntityIdentifier)
         for (MyEntityIdentifier entity : entities)
         {
-    		if (!isComplete(entity.ref, previous))
+        	val res = isComplete(entity.ref, previous)
+    		if (res !== null)
     		{
-    			return false
+    			return "Element "+current.name+" - attribute element "+ entity.ref.name + " error: " + res 
     		}        	
         }
-		return true
+		return null
 	}
 	
 	@Check
@@ -162,10 +178,34 @@ class MyDSLValidator extends AbstractMyDSLValidator {
 		val value = attribute.right
 		if (value instanceof MyEntityIdentifier)
 		{
-			if (!isComplete(value.ref as Entity, newArrayList(attribute.eContainer as Entity)))
+			val res = isComplete(value.ref as Entity, newArrayList(attribute.eContainer as Entity))
+			if (res !== null)
 			{
-				error('Entity '+(attribute.eContainer as Entity).name+' specification attribute "' + attribute.ref.name + ' = '+ (value.ref as EntityImpl).name +'" references entity whose specification is not complete (or include cyclic reference)', attribute, null, "inclompleteEntity")
+				error(res, attribute, null, "entityReferenceError")
 			}
+		}
+	}
+	
+	
+	@Check
+	def checkIfParentEntityIsComplete(Entity entity) 
+	{
+		if (entity.parent !== null)
+		{
+			val res = isComplete(entity.parent, newArrayList(entity))
+			if (res !== null)
+			{
+				error(res, entity, null, "entityReferenceError")
+			}
+		}
+	}
+	
+	@Check 
+	def checkIfParentHasSameWidget(Entity entity)
+	{
+		if (entity.parent !== null && entity.ref != entity.parent.ref)
+		{
+			error("Parent have to be same type (widget) as element!", entity, null, "entityParentType")			
 		}
 	}
 }
