@@ -6,7 +6,7 @@ Model:
 	'package' name=QualifiedName ';'
 	imports+=Import*
 	
-	headers=Headers
+	headers=Headers?
 	widgets=Widgets?
 	entities=Entities?
 	layouts=Layouts?

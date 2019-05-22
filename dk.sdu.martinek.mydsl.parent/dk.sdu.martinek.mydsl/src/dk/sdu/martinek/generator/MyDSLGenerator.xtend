@@ -22,6 +22,7 @@ import dk.sdu.martinek.myDSL.Property
 import dk.sdu.martinek.validation.MyDSLValidator
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import com.google.inject.Inject
+import org.eclipse.xtext.EcoreUtil2
 
 /**
  * Generates code from your model files on save.
@@ -79,28 +80,41 @@ class MyDSLGenerator extends AbstractGenerator {
 	
 	def String generate(Layouts layouts)
 	{
-		var String res
+		var String res = ""
 		for (Layout layout: layouts.layouts)
 		{
-			res += layout.generate
+			res += generate(layout, 0)
 		}
 		return res
 	}
 	
-	def String generate(Layout layout)
+	def String generate(Layout layout, int depth)
 	{
 		var String body = ""
 		for (Layout child: layout.childs)
 		{
-			body += child.generate
+			body += generate(child, depth + 1)
 		}
-		return generate(layout.ref, body)
+		if (!body.empty)
+		{
+			body = "\n" + body.split("\\r?\\n").map[line|
+				var indentation = ""
+				for(var int i = 0; i <= depth; i++)
+				{
+					indentation += "\t"
+				}
+				return indentation + line
+			].join("\n") + "\n"
+		}
+		return generate(layout.ref, body) + "\n"
 	}
 	
 	def String generate(Entity entity, String body)
 	{
-		var template = entity.ref.template.value
-		var properties = entity.ref.properties
+		val widget = entity.ref
+		var template = widget.template.value
+		var properties = newArrayList()
+		properties.addAll(widget.properties)
 		//Defined attribute
 		for (Attribute attr :  entity.attributes)
 		{
@@ -167,7 +181,7 @@ class MyDSLGenerator extends AbstractGenerator {
 		}
 		
 		template = template.replaceAll(MyDSLValidator.BODY_PROPERTY, body)
-		template = template.replaceAll(MyDSLValidator.ID_PROPERTY, makeId(entity)) + "\n"
+		template = template.replaceAll(MyDSLValidator.ID_PROPERTY, makeId(entity))
 		return 	template
 	}
 	

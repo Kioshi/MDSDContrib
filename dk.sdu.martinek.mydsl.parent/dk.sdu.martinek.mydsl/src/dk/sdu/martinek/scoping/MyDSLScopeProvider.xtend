@@ -11,6 +11,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
+import dk.sdu.martinek.myDSL.MyEntityIdentifier
 
 /**
  * This class contains custom scoping description.
@@ -19,8 +20,6 @@ import org.eclipse.xtext.scoping.Scopes
  * on how and when to use it.
  */
 class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
-
-	//@Inject extension MyDSLModelUtils
 	
 	override IScope getScope(EObject context, EReference reference) {
 		
@@ -29,7 +28,8 @@ class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
 			// Entity attribute hint scope
 			if (context instanceof Entity)
 			{
-				return Scopes.scopeFor(context.ref.properties)
+				// Only show not already defined properties
+				return Scopes.scopeFor(context.ref.properties.filter[prop| !context.attributes.map[attr| attr.ref].contains(prop)])
 			}
 			
 			// Entity attribute normal scope
@@ -43,6 +43,8 @@ class MyDSLScopeProvider extends AbstractMyDSLScopeProvider {
 		if (( context instanceof Layout && reference == MyDSLPackage.Literals.LAYOUT__REF)
 		   ||(context instanceof Entity && reference == MyDSLPackage.Literals.ENTITY__REF)
 		   ||(context instanceof Attribute && reference == MyDSLPackage.Literals.MY_ENTITY_IDENTIFIER__REF)
+		   ||(context instanceof Entity && reference.containerClass == Entity)
+		   ||(context instanceof MyEntityIdentifier && reference.containerClass == MyEntityIdentifier)
 		)
 		{
 			return super.getScope(context, reference)			
