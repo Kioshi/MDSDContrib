@@ -1,0 +1,16 @@
+package second;
+
+Widgets:
+	Widget button
+	{
+		template '<span id="__ID__" class="test">__BODY__</span>'
+	}
+
+Elements:
+	button test
+	button test2
+Layout:
+	test
+	{
+		test2
+	}

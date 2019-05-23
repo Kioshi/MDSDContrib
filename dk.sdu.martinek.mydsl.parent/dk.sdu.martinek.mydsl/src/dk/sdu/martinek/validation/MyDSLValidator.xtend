@@ -17,6 +17,10 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.validation.Check
 import dk.sdu.martinek.myDSL.Header
 import java.io.File
+import dk.sdu.martinek.myDSL.Entities
+import dk.sdu.martinek.myDSL.Specifications
+import java.util.Collections
+import dk.sdu.martinek.myDSL.Widgets
 
 /**
  * This class contains custom validation rules. 
@@ -223,6 +227,30 @@ class MyDSLValidator extends AbstractMyDSLValidator {
 		if (!file.exists)
 		{
 			error("File "+header.value+" not found!", header, null, "headerFileNotFound")
+		}
+	}
+	
+	@Check
+	def checkIfEntityNameIsUnique(Specifications entities)
+	{
+		for (Entity entity :  entities.entities)
+		{
+			if (Collections.frequency(entities.entities.map[itr| itr.name], entity.name) > 1)
+			{
+				error("Entity name "+entity.name+" is not unique!", entity, null, "entityNameNotUnique")
+			}
+		}
+	}
+	
+	@Check
+	def checkIfWidgetNameIsUnique(Widgets widgets)
+	{
+		for (Widget widget :  widgets.widgets)
+		{
+			if (Collections.frequency(widgets.widgets.map[itr| itr.name], widget.name) > 1)
+			{
+				error("Widget name "+widget.name+" is not unique!", widget, null, "widgetNameNotUnique")
+			}
 		}
 	}
 }

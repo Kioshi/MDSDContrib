@@ -1,0 +1,12 @@
+package main;
+import second.button;
+
+Elements:
+	button butt
+	button butt2
+
+Layout:
+	butt
+	{
+		butt2
+	}
